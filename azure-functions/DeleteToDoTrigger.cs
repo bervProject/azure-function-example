@@ -1,35 +1,51 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
+using azure_functions.Infrastructure;
+using System.Security.Claims;
+using azure_functions.Domain;
+using System.Linq;
 
 namespace azure_functions
 {
-    public static class DeleteToDoTrigger
+    public class DeleteToDoTrigger
     {
+        private readonly NoteDbContext _dbContext;
+        public DeleteToDoTrigger(NoteDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
         [FunctionName("DeleteToDoTrigger")]
-        public static async Task<IActionResult> Run(
+        public IActionResult Run(
             [HttpTrigger(AuthorizationLevel.Function, "delete", Route = null)] HttpRequest req,
             ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
+            ClaimsPrincipal identities = req.HttpContext.User;
+            var userName = identities.Identity?.Name;
+            if (string.IsNullOrEmpty(userName))
+            {
+                return new UnauthorizedResult();
+            }
 
-            string name = req.Query["name"];
+            string id = req.Query["id"];
+            if (!int.TryParse(id, out int parsedId))
+            {
+                return new BadRequestResult();
+            }
 
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
-            dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
+            var existingNote = _dbContext.Set<Note>().Where(x => x.Id == parsedId && x.CreatedBy == userName).FirstOrDefault();
 
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
+            if (existingNote != null)
+            {
+                log.LogInformation($"Delete ${existingNote.Id} by ${userName}");
+                _dbContext.Remove(existingNote);
+                return new EmptyResult();
+            }
 
-            return new OkObjectResult(responseMessage);
+            return new NotFoundResult();
+
         }
     }
 }

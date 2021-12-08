@@ -1,4 +1,3 @@
-using System;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -7,29 +6,49 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Security.Claims;
+using azure_functions.Domain;
+using azure_functions.Infrastructure;
 
 namespace azure_functions
 {
-    public static class CreateToDoTrigger
+    public class CreateToDoTrigger
     {
+        private readonly NoteDbContext _dbContext;
+        public CreateToDoTrigger(NoteDbContext dbContext)
+        {
+            _dbContext = dbContext;
+        }
+
         [FunctionName("CreateToDoTrigger")]
-        public static async Task<IActionResult> Run(
+        public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
             ILogger log)
         {
-            log.LogInformation("C# HTTP trigger function processed a request.");
-
-            string name = req.Query["name"];
-
-            string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
+            ClaimsPrincipal identities = req.HttpContext.User;
+            var userName = identities.Identity?.Name;
+            if (string.IsNullOrEmpty(userName))
+            {
+                return new UnauthorizedResult();
+            }
+            string requestBody = string.Empty;
+            using (StreamReader streamReader = new(req.Body))
+            {
+                requestBody = await streamReader.ReadToEndAsync();
+            }
             dynamic data = JsonConvert.DeserializeObject(requestBody);
-            name = name ?? data?.name;
-
-            string responseMessage = string.IsNullOrEmpty(name)
-                ? "This HTTP triggered function executed successfully. Pass a name in the query string or in the request body for a personalized response."
-                : $"Hello, {name}. This HTTP triggered function executed successfully.";
-
-            return new OkObjectResult(responseMessage);
+            var title = data?.title;
+            var message = data?.message;
+            var newNote = new Note
+            {
+                Title = title,
+                Message = message,
+                CreatedBy = userName,
+            };
+            log.LogInformation($"Insert new note. User: ${userName}");
+            await _dbContext.AddAsync(newNote);
+            log.LogInformation($"Created Note: ${newNote.Id}");
+            return new OkObjectResult(newNote);
         }
     }
 }
