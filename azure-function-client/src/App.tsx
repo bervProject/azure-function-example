@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import axios from 'axios';
 import { useIsAuthenticated, useMsal } from "@azure/msal-react";
 import Button from '@mui/material/Button';
@@ -114,7 +114,7 @@ function App() {
         </>
       );
     }
-  }, [accounts, instance, isAuthenticated]);
+  }, [accounts, instance, isAuthenticated, login, logout]);
 
   const renderNote = useCallback(() => {
     if (isHaveActiveAccount) {
@@ -168,7 +168,7 @@ function App() {
     } else {
       return (<div>Please Login First</div>);
     }
-  }, [isHaveActiveAccount, noteData, open, title, message]);
+  }, [addNote, isHaveActiveAccount, noteData, open, title, message]);
 
   const getNote = () => {
     instance.acquireTokenSilent(loginRequest).then(result => {
@@ -192,13 +192,13 @@ function App() {
   useEffect(() => {
     const account = instance.getActiveAccount();
     setActiveAccount(!!account);
-  }, []);
+  }, [instance]);
 
   useEffect(() => {
     if (isHaveActiveAccount) {
       getNote();
     }
-  }, [isHaveActiveAccount]);
+  }, [isHaveActiveAccount, getNote]);
 
   return (
     <div className="App">
