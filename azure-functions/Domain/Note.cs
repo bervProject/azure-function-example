@@ -8,7 +8,7 @@ namespace azure_functions.Domain
 {
     public class Note
     {
-        public int Id { get; set; }
+        public Guid Id { get; set; } = Guid.NewGuid();
         public string Title { get; set; }
         public string Message { get; set; }
         public string CreatedBy { get; set; }
