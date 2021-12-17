@@ -19,7 +19,7 @@ namespace azure_functions
         }
         [FunctionName("DeleteToDoTrigger")]
         public IActionResult Run(
-            [HttpTrigger(AuthorizationLevel.Function, "delete", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = null)] HttpRequest req,
             ILogger log)
         {
             ClaimsPrincipal identities = req.HttpContext.User;

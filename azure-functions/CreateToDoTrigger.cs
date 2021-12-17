@@ -22,7 +22,7 @@ namespace azure_functions
 
         [FunctionName("CreateToDoTrigger")]
         public async Task<IActionResult> Run(
-            [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)] HttpRequest req,
             ILogger log)
         {
             ClaimsPrincipal identities = req.HttpContext.User;

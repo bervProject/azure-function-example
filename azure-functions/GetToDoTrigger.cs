@@ -6,8 +6,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using azure_functions.Infrastructure;
 using azure_functions.Domain;
+using System;
 using System.Linq;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace azure_functions
 {
@@ -21,18 +23,21 @@ namespace azure_functions
 
         [FunctionName("GetToDoTrigger")]
         public IActionResult Run(
-            [HttpTrigger(AuthorizationLevel.Function, "get", Route = null)] HttpRequest req,
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = null)] HttpRequest req,
             ILogger log)
         {
             ClaimsPrincipal identities = req.HttpContext.User;
+
             var userName = identities.Identity?.Name;
+            log.LogInformation($"{JsonSerializer.Serialize(identities.Identity)}");
             if (string.IsNullOrEmpty(userName))
             {
-                return new UnauthorizedResult();
+                log.LogInformation("Empty username");
+                return new StatusCodeResult(403);
             }
-            log.LogInformation($"Get all notes. User: ${userName}");
+            log.LogInformation($"Get all notes. User: {userName}");
             var noteList = _dbContext.Set<Note>().Where(x => x.CreatedBy == userName).ToList();
-            log.LogInformation($"Get notes: ${noteList.Count}");
+            log.LogInformation($"Get notes: {noteList.Count}");
             return new OkObjectResult(noteList);
         }
     }
