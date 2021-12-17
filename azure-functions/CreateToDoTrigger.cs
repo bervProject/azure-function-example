@@ -26,10 +26,10 @@ namespace azure_functions
             ILogger log)
         {
             ClaimsPrincipal identities = req.HttpContext.User;
-            var userName = identities.Identity?.Name;
+            var userName = identities.Identity?.Name ?? req.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].ToString();
             if (string.IsNullOrEmpty(userName))
             {
-                return new UnauthorizedResult();
+                return new StatusCodeResult(403);
             }
             string requestBody = string.Empty;
             using (StreamReader streamReader = new(req.Body))
