@@ -53,7 +53,26 @@ function App() {
     });
   }, [instance]);
 
-  const addNote = () => {
+  const getNote = useCallback(() => {
+    instance.acquireTokenSilent(loginRequest).then(result => {
+      const accessToken = result.accessToken;
+      console.log(accessToken);
+      axios.get("https://af-demo-berv-1.azurewebsites.net/api/GetToDoTrigger", {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        }
+      }).then(response => {
+        console.log(response.data);
+        setNoteData(response.data);
+      }).catch(error => {
+        console.error(error);
+      })
+    }).catch(err => {
+      console.error(err);
+    });
+  }, [instance, setNoteData]);
+
+  const addNote = useCallback(() => {
     if (isHaveActiveAccount && message && title) {
       instance.acquireTokenSilent(loginRequest).then(result => {
         const accessToken = result.accessToken;
@@ -81,7 +100,7 @@ function App() {
     } else {
       Promise.reject("Un-authorized or not fill data");
     }
-  };
+  }, [isHaveActiveAccount, message, title, instance, getNote, setOpen]);
 
   const renderLogin = useCallback(() => {
     const activeAccount = instance.getActiveAccount();
@@ -169,25 +188,6 @@ function App() {
       return (<div>Please Login First</div>);
     }
   }, [addNote, isHaveActiveAccount, noteData, open, title, message]);
-
-  const getNote = () => {
-    instance.acquireTokenSilent(loginRequest).then(result => {
-      const accessToken = result.accessToken;
-      console.log(accessToken);
-      axios.get("https://af-demo-berv-1.azurewebsites.net/api/GetToDoTrigger", {
-        headers: {
-          'Authorization': `Bearer ${accessToken}`
-        }
-      }).then(response => {
-        console.log(response.data);
-        setNoteData(response.data);
-      }).catch(error => {
-        console.error(error);
-      })
-    }).catch(err => {
-      console.error(err);
-    });
-  }
 
   useEffect(() => {
     const account = instance.getActiveAccount();
