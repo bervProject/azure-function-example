@@ -8,6 +8,7 @@ using System.Security.Claims;
 using azure_functions.Domain;
 using System.Linq;
 using System.Threading.Tasks;
+using System;
 
 namespace azure_functions
 {
@@ -31,7 +32,7 @@ namespace azure_functions
             }
 
             string id = req.Query["id"];
-            if (!int.TryParse(id, out int parsedId))
+            if (!Guid.TryParse(id, out var parsedId))
             {
                 return new BadRequestResult();
             }
