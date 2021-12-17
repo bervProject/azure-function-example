@@ -28,7 +28,8 @@ namespace azure_functions
         {
             ClaimsPrincipal identities = req.HttpContext.User;
 
-            var userName = identities.Identity?.Name;
+            var userName = identities.Identity?.Name ?? req.Headers["X-MS-CLIENT-PRINCIPAL-NAME"].ToString();
+            log.LogInformation($"{req.Headers["X-MS-CLIENT-PRINCIPAL-NAME"]}");
             log.LogInformation($"{JsonSerializer.Serialize(identities.Identity)}");
             if (string.IsNullOrEmpty(userName))
             {
