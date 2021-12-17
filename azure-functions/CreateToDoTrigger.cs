@@ -47,6 +47,7 @@ namespace azure_functions
             };
             log.LogInformation($"Insert new note. User: ${userName}");
             await _dbContext.AddAsync(newNote);
+            await _dbContext.SaveChangesAsync();
             log.LogInformation($"Created Note: ${newNote.Id}");
             return new OkObjectResult(newNote);
         }

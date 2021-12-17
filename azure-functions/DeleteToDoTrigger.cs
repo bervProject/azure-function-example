@@ -7,6 +7,7 @@ using azure_functions.Infrastructure;
 using System.Security.Claims;
 using azure_functions.Domain;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace azure_functions
 {
@@ -18,7 +19,7 @@ namespace azure_functions
             _dbContext = dbContext;
         }
         [FunctionName("DeleteToDoTrigger")]
-        public IActionResult Run(
+        public async Task<IActionResult> Run(
             [HttpTrigger(AuthorizationLevel.Anonymous, "delete", Route = null)] HttpRequest req,
             ILogger log)
         {
@@ -41,6 +42,7 @@ namespace azure_functions
             {
                 log.LogInformation($"Delete ${existingNote.Id} by ${userName}");
                 _dbContext.Remove(existingNote);
+                await _dbContext.SaveChangesAsync();
                 return new EmptyResult();
             }
 
